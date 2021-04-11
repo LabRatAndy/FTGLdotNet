@@ -150,5 +150,24 @@ namespace FTGLdotNet.Atlas
             used += regionwidth * regionheight;
             return region;
         }
+
+        private int Fit(int index, int fitwidth, int fitheight)
+        {
+            int x = nodes[index].X;
+            int y = nodes[index].Y;
+            int widthleft = fitwidth;
+            int i = index;
+            // can the new width be fitted into the atlas total width? 
+            if ((fitwidth + x) > (width - 1)) return -1;
+            while (widthleft > 0)
+            {
+                Node anode = nodes[i];
+                if (anode.Y > y) y = anode.Y;
+                if ((y + fitheight) > (height - 1)) return -1;
+                widthleft -= anode.Z;
+                i++;
+            }
+            return y;
+        }
     }
 }
