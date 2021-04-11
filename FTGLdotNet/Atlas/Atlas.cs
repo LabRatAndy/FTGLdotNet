@@ -101,21 +101,18 @@ namespace FTGLdotNet.Atlas
             int bestindex = -1;
             int bestwidth = int.MaxValue;
             int bestheght = int.MaxValue;
-            Node node;
-            Node prev;
-            Region region = new Region(0, 0, width, height);
-            for (int i = 0; i < atlas.Nodes.Count; i++)
+            Region region = new Region(0, 0, regionwidth, regionheight);
+            for (int i = 0; i < nodes.Count; i++)
             {
-                y = Fit(ref atlas, i, width, height);
+                y = Fit(i, regionwidth, regionheight); 
                 if (y >= 0)
                 {
-                    node = atlas.Nodes[i];
-                    if (((node.Y + height) < bestheght) || ((node.Y + height) == bestheght) && (node.Z > 0 && node.Z < bestwidth))
+                    if (((nodes[i].Y + regionheight) < bestheght) || ((nodes[i].Y + regionheight) == bestheght) && (nodes[i].Z > 0 &&  nodes[i].Z < bestwidth))
                     {
-                        bestheght = y + height;
+                        bestheght = y + regionheight;
                         bestindex = i;
-                        bestwidth = node.Z;
-                        region.X = node.X;
+                        bestwidth = nodes[i].Z;
+                        region.X = nodes[i].X;
                         region.Y = y;
                     }
                 }
@@ -124,19 +121,19 @@ namespace FTGLdotNet.Atlas
             {
                 return new Region(-1, -1, 0, 0);
             }
-            atlas.Nodes.Insert(bestindex, new Node(region.X, region.Y + height, width));
-            for (int i = bestindex + 1; i < atlas.Nodes.Count; i++)
+            nodes.Insert(bestindex, new Node(region.X, region.Y + height, width));
+            for (int i = bestindex + 1; i < nodes.Count; i++)
             {
-                node = atlas.Nodes[i];
-                prev = atlas.Nodes[i - 1];
-                if (node.X < (prev.X + prev.Z))
+                Node node = nodes[i];
+                Node prev = nodes[i - 1];
+                if (node.X < (prev.X + prev.Z)) 
                 {
                     int shrink = prev.X + prev.Z - node.X;
                     node.X += shrink;
                     node.Z -= shrink;
                     if (node.Z <= 0)
                     {
-                        atlas.Nodes.RemoveAt(i);
+                        nodes.RemoveAt(i);
                         --i;
                     }
                     else
@@ -149,8 +146,8 @@ namespace FTGLdotNet.Atlas
                     break;
                 }
             }
-            Merge(ref atlas);
-            atlas.Used += width * height;
+            Merge();
+            used += regionwidth * regionheight;
             return region;
         }
     }
