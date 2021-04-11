@@ -1,7 +1,7 @@
 ﻿using System;
 namespace FTGLdotNet.Atlas
 {
-    public static class Atlas
+    public partial class Atlas
     { 
         /// <summary>
         ///  Creates a new empty texture atlas.
