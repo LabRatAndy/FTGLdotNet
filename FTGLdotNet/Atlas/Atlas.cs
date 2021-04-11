@@ -151,6 +151,23 @@ namespace FTGLdotNet.Atlas
             return region;
         }
 
+        /// <summary>
+        /// Upload data to the specified atlas region.
+        /// </summary>
+        /// <param name="atlas">a texture atlas structure</param>
+        /// <param name="x">a texture atlas structure</param>
+        /// <param name="y">y coordinate the region</param>
+        /// <param name="width">width of the region</param>
+        /// <param name="height">height of the region</param>
+        /// <param name="data">data to be uploaded into the specified region</param>
+        /// <param name="stride">stride of the data</param>
+        
+        public void SetRegion(int x, int y, int regionwidth, int regionheight, byte[] regiondata, int stride)
+        {
+            int destinationstartpoint = ((y + 0) * width + x) * depth;
+            Array.Copy(regiondata, 0, this.data, destinationstartpoint, regiondata.Length);
+        }
+
         private int Fit(int index, int fitwidth, int fitheight)
         {
             int x = nodes[index].X;
