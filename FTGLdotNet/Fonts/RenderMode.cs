@@ -1,7 +1,7 @@
 ﻿namespace FTGLdotNet.Font
 {
     //A list of possible ways to render a glyph
-    internal enum RenderMode
+    public enum RenderMode
     {
         RENDER_NORMAL,
         RENDER_OUTLINE_EDGE,
