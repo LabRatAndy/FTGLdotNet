@@ -168,6 +168,26 @@ namespace FTGLdotNet.Atlas
             Array.Copy(regiondata, 0, this.data, destinationstartpoint, regiondata.Length);
         }
 
+        /// <summary>
+        /// Remove all allocated regions from the atlas.
+        /// </summary>
+        public void Clear()
+        {
+            Node node = new Node(1, 1, 1);
+            nodes.Clear();
+            used = 0;
+            node.Z = width - 2;
+            nodes.Add(node);
+            data = new byte[width * height * depth];
+        }
+
+        /// <summary>
+        /// private function used to fit the next glyph into the texture atlas during the get region function
+        /// </summary>
+        /// <param name="index">node index</param>
+        /// <param name="fitwidth">width of the glyph to fit</param>
+        /// <param name="fitheight">height of the glyph to fit</param>
+        /// <returns>The y coord of the region in the texture atlas</returns>
         private int Fit(int index, int fitwidth, int fitheight)
         {
             int x = nodes[index].X;
@@ -186,6 +206,9 @@ namespace FTGLdotNet.Atlas
             }
             return y;
         }
+        /// <summary>
+        /// private function used to merge nodes during the get region function
+        /// </summary>
         private void Merge()
         {
             for (int i = 0; i < nodes.Count - 1; i++)
