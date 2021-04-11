@@ -5,7 +5,7 @@ namespace FTGLdotNet.Atlas
     /// <summary>
     /// A texture atlas is used to pack several small regions into a single texture.
     /// </summary>
-    public partial class Atlas
+    public class Atlas
     {
         /// <summary>
         /// Allocated nodes
