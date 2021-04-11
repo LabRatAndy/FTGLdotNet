@@ -169,5 +169,20 @@ namespace FTGLdotNet.Atlas
             }
             return y;
         }
+        private void Merge()
+        {
+            for (int i = 0; i < nodes.Count - 1; i++)
+            {
+                Node next = nodes[i + 1];
+                if (nodes[i].Y == next.Y)
+                {
+                    Node node = nodes[i];
+                    node.Z += next.Z;
+                    nodes[i] = node;
+                    nodes.RemoveAt(i + 1);
+                    --i;
+                }
+            }
+        }
     }
 }
