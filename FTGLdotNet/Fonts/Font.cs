@@ -1,10 +1,13 @@
 ﻿using FTGLdotNet.Atlas;
 using SharpFont;
 using System;
+using System.Collections.Generic;
+
 namespace FTGLdotNet.Font
 {
-    public static class Font
+    public class Font
     {
+        //private helper struct
         private struct Padding
         {
             int left;
@@ -39,22 +42,169 @@ namespace FTGLdotNet.Font
                 set { right = value; }
             }
         }
-        private static readonly float HRESF = 64.0f;
-        private static readonly uint HRES = 64;
-        private static readonly uint DPI = 72;
+        //constants
+        private const float HRESF = 64.0f;
+        private const uint HRES = 64;
+        private const uint DPI = 72;
 
-        private static Library library = null;
-        private static Face face = null;
-        public static Texture_Font_T LoadFontFromFile(Texture_Atlas_T atlas, float fontsize, string filename)
+        //member variables 
+        private Library library = null;
+        private Face face = null;
+
+        //member variables from  texture font t struct
+        private List<Texture_Glyph_T> glyphs;
+        private Atlas.Atlas atlas = null;
+        private string filename;
+        private float size;
+        private bool hinting;
+        private RenderMode rendermode;
+        private float outlinethickness;
+        private bool filtering;
+        private byte[] lcdfilterweights;
+        private bool kerning;
+        private float height;
+        private float linegap;
+        private float ascender;
+        private float decender;
+        private float underlineposition;
+        private float underlinethickness;
+        private int padding;
+
+        // properties
+        //Vector of glyphs contained in this font.
+        public List<Texture_Glyph_T> Glyphs
         {
-            Texture_Font_T font = new Texture_Font_T();
-            font.Atlas = atlas;
-            font.Size = fontsize;
-            font.Filename = filename;
-            if (FontInit(ref font) == false) throw new Exception("error initialising Font");
-            return font;
+            get { return glyphs; }
+            set { glyphs = value; }
         }
 
+        //Atlas structure to store glyphs data.
+        public Atlas.Atlas TextureAtlas
+        {
+            get { return atlas; }
+            set { atlas = value; }
+        }
+
+        //font location can only be loaded from file atleast at the momment
+        public string Filename
+        {
+            get { return filename; }
+            set { filename = value; }
+        }
+
+        //font size
+        public float Size
+        {
+            get { return size; }
+            set { size = value; }
+        }
+
+        // Whether to use autohint when rendering font
+        public bool Hinting
+        {
+            get { return hinting; }
+            set { hinting = value; }
+        }
+
+        //Mode the font is rendering its next glyph
+        public RenderMode RenderMode
+        {
+            get { return rendermode}
+            set { rendermode = value; }
+        }
+        //Outline thickness
+        public float OutlineThinknes
+        {
+            get { return outlinethickness; }
+            set { outlinethickness = value; }
+        }
+        //Whether to use our own lcd filter
+        public bool LCDFilter
+        {
+            get { return filtering; }
+            set { filtering = value; }
+        }
+        //LCD filter weights
+        public byte[] LCDFilterWeights
+        {
+            get { return lcdfilterweights; }
+            set { lcdfilterweights = value; }
+        }
+        //Whether to use kerning if available
+        public bool Kerning
+        {
+            get { return kerning; }
+            set { kerning = value; }
+        }
+        /* This field is simply used to compute a default line spacing (i.e., the
+        * baseline-to-baseline distance) when writing text with this font. Note
+        * that it usually is larger than the sum of the ascender and descender
+        * taken as absolute values. There is also no guarantee that no glyphs
+        * extend above or below subsequent baselines when using this distance.*/
+        public float Height
+        {
+            get { return height; }
+            set { height = value; }
+        }
+        /* This field is the distance that must be placed between two lines of
+        * text. The baseline-to-baseline distance should be computed as:
+        * ascender - descender + linegap*/
+        public float Linegap
+        {
+            get { return linegap; }
+            set { linegap = value; }
+        }
+        /* The ascender is the vertical distance from the horizontal baseline to
+        * the highest 'character' coordinate in a font face. Unfortunately, font
+        * formats define the ascender differently. For some, it represents the
+        * ascent of all capital latin characters (without accents), for others it
+        * is the ascent of the highest accented character, and finally, other
+        * formats define it as being equal to bbox.yMax.*/
+        public float Ascender
+        {
+            get { return ascender; }
+            set { ascender = value; }
+        }
+        /** The descender is the vertical distance from the horizontal baseline to
+        * the lowest 'character' coordinate in a font face. Unfortunately, font
+        * formats define the descender differently. For some, it represents the
+        * descent of all capital latin characters (without accents), for others it
+        * is the ascent of the lowest accented character, and finally, other
+        * formats define it as being equal to bbox.yMin. This field is negative
+        * for values below the baseline. */
+        public float Desecnder
+        {
+            get { return decender; }
+            set { decender = value; }
+        }
+        /* The position of the underline line for this face. It is the center of
+        * the underlining stem. Only relevant for scalable formats.*/
+        public float UnderLinePosition
+        {
+            get { return underlineposition; }
+            set { underlineposition = value; }
+        }
+        //The thickness of the underline for this face.Only relevant for scalable formats.
+        public float UnderlineThinkness
+        {
+            get { return underlinethickness; }
+            set { underlinethickness = value; }
+        }
+        //The padding to be add to the glyph's texture that are loaded by this font. Usefull when adding effects with shaders.
+        public int PaddingValue
+        {
+            get { return padding; }
+            set { padding = value; }
+        }
+
+        public Font(float fontsize, string filename, int atlaswidth, int atlasheight, int atlasdepth)
+        {
+            size = fontsize;
+            this.filename = filename;
+            atlas = new Atlas.Atlas(atlaswidth, atlasheight, atlasdepth);
+            if (FontInit() == false) throw new Exception("error initialising Font");
+        }
+        //keep but make private
         public static bool FontInit(ref Texture_Font_T font)
         {
             SizeMetrics sizemetrics = null;
@@ -86,7 +236,7 @@ namespace FTGLdotNet.Font
             return true;
 
         }
-
+        //keep make private 
         public static bool LoadFace(ref Texture_Font_T font, ref Library library, ref Face face, float size)
         {
             library = new Library();
