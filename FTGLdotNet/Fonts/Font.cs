@@ -109,7 +109,7 @@ namespace FTGLdotNet.Font
         //Mode the font is rendering its next glyph
         public RenderMode RenderMode
         {
-            get { return rendermode}
+            get { return rendermode; }
             set { rendermode = value; }
         }
         //Outline thickness
@@ -196,7 +196,14 @@ namespace FTGLdotNet.Font
             get { return padding; }
             set { padding = value; }
         }
-
+        /// <summary>
+        /// Constructor for font class, creates an atlas of the supplied size
+        /// </summary>
+        /// <param name="fontsize">the font size in points</param>
+        /// <param name="filename">the font ttf file to load from</param>
+        /// <param name="atlaswidth">width of the atlas created in pixels</param>
+        /// <param name="atlasheight">height of the atlas created in pixels</param>
+        /// <param name="atlasdepth">byte depth of atlas in bytes must be 1, 3 or 4</param>
         public Font(float fontsize, string filename, int atlaswidth, int atlasheight, int atlasdepth)
         {
             size = fontsize;
@@ -204,44 +211,44 @@ namespace FTGLdotNet.Font
             atlas = new Atlas.Atlas(atlaswidth, atlasheight, atlasdepth);
             if (FontInit() == false) throw new Exception("error initialising Font");
         }
-        //keep but make private
-        public static bool FontInit(ref Texture_Font_T font)
+        //initialises the font object and loads the face object
+        private bool FontInit()
         {
             SizeMetrics sizemetrics = null;
 
-            font.Glyphs = new System.Collections.Generic.List<Texture_Glyph_T>();
-            font.Height = 0;
-            font.Ascender = 0;
-            font.Descender = 0;
-            font.Outlinethickness = 0.0f;
-            font.Rendermode = RenderMode.RENDER_NORMAL;
-            font.Hinting = 1;
-            font.Kerning = 1;
-            font.Filtering = 1;
-            font.Lcd_filter_weights = new byte[5] { 0x10, 0x40, 0x70, 0x40, 0x10 };
-            if (!LoadFace(ref font, ref library, ref face, font.Size)) return false;
-            font.Underlineposition = face.UnderlinePosition / (HRESF * HRESF) * font.Size;
-            font.Underlineposition = System.MathF.Round(font.Underlineposition);
-            if (font.Underlineposition < -2.0) font.Underlineposition = -2.0f;
-            font.Underlinethickness = face.UnderlineThickness / (HRESF * HRESF) * font.Size;
-            font.Underlinethickness = System.MathF.Round(font.Underlinethickness);
-            if (font.Underlinethickness < 1) font.Underlinethickness = 1.0f;
+            glyphs = new System.Collections.Generic.List<Texture_Glyph_T>();
+            height = 0;
+            ascender = 0;
+            decender = 0;
+            outlinethickness = 0.0f;
+            rendermode = RenderMode.RENDER_NORMAL;
+            hinting = true;
+            kerning = true;
+            filtering = true;
+            LCDFilterWeights = new byte[5] { 0x10, 0x40, 0x70, 0x40, 0x10 };
+            if (!LoadFace()) return false;
+            underlineposition = face.UnderlinePosition / (HRESF * HRESF) * size;
+            underlineposition = System.MathF.Round(underlineposition);
+            if (underlineposition < -2.0) underlineposition = -2.0f;
+            underlinethickness = face.UnderlineThickness / (HRESF * HRESF) * size;
+            underlinethickness = System.MathF.Round(underlinethickness);
+            if (underlinethickness < 1) underlinethickness = 1.0f;
             sizemetrics = face.Size.Metrics;
-            font.Ascender = sizemetrics.Ascender.ToSingle();
-            font.Descender = sizemetrics.Descender.ToSingle();
-            font.Height = sizemetrics.Height.ToSingle();
-            font.Linegap = font.Height - font.Ascender + font.Descender;
+            ascender = sizemetrics.Ascender.ToSingle();
+            decender = sizemetrics.Descender.ToSingle();
+            height = sizemetrics.Height.ToSingle();
+            linegap = height - ascender + decender;
 
-            GetGlyph(ref font, '\0');
+            GetGlyph('\0');
             return true;
 
         }
-        //keep make private 
-        public static bool LoadFace(ref Texture_Font_T font, ref Library library, ref Face face, float size)
+        //loads the face of the font 
+        private bool LoadFace()
         {
             library = new Library();
             if (library == null) return false;
-            face = new Face(library, font.Filename);
+            face = new Face(library, filename);
             if (face == null) return false;
             face.SelectCharmap(Encoding.Unicode);
             face.SetCharSize(Fixed26Dot6.FromSingle(size), 0, DPI * HRES, HRES);
@@ -249,26 +256,38 @@ namespace FTGLdotNet.Font
             face.SetTransform(matrix);
             return true;
         }
-        public static Texture_Glyph_T GetGlyph(ref Texture_Font_T font, char codepoint)
+        /// <summary>
+        /// returns the glyph of a given codepoint
+        /// </summary>
+        /// <param name="codepoint">the codepoint whose glyph wiil be returned </param>
+        /// <returns>The glyph that matches the codepoint</returns>
+        public Texture_Glyph_T GetGlyph(char codepoint)
         {
             Texture_Glyph_T glyph;
-            if ((FindGlyph(ref font, codepoint, out glyph))) return glyph;
-            if (LoadGlyph(ref font, codepoint))
+            if ((FindGlyph(codepoint, out glyph))) return glyph;
+            if (LoadGlyph(codepoint))
             {
-                FindGlyph(ref font, codepoint, out glyph);
+                FindGlyph(codepoint, out glyph);
                 return glyph;
             }
             throw new Exception("Error retrieving the glyph!");
         }
-        public static bool FindGlyph(ref Texture_Font_T font, char codepoint, out Texture_Glyph_T Glyph)
+        /// <summary>
+        /// finds if the glyph for the codepoint has already been loaded into the glyphs list and if so returns it.
+        /// </summary>
+        /// <param name="codepoint">the codepoint to retreive</param>
+        /// <param name="Glyph">the glyph if found</param>
+        /// <returns>true if the glyph has been loaded and passes the glyph back as Glyph, false otherwise</returns>
+        /// <remarks> don't use glyph if it has returned false as it will be invalid</remarks>
+        private bool FindGlyph(char codepoint, out Texture_Glyph_T Glyph)
         {
             Texture_Glyph_T glyph;
             int uintcodepoint = char.ConvertToUtf32(codepoint.ToString(),0);
-            for (int i = 0; i < font.Glyphs.Count; i++)
+            for (int i = 0; i < glyphs.Count; i++)
             {
-                glyph = font.Glyphs[i];
+                glyph = glyphs[i];
                 if((glyph.Codepoint == uintcodepoint)&& ((int)uintcodepoint ==-1)|| 
-                    ((glyph.RenderMode == font.Rendermode)&& glyph.Outlinethickness == font.Outlinethickness))
+                    ((glyph.RenderMode == rendermode)&& glyph.Outlinethickness == outlinethickness))
                 {
                     Glyph = glyph;
                     return true;
@@ -277,7 +296,12 @@ namespace FTGLdotNet.Font
             Glyph = new Texture_Glyph_T();
             return false;
         }
-        public static bool LoadGlyph(ref Texture_Font_T font, char codepoint)
+        /// <summary>
+        /// Loads the glyph assoicated with the given codepoint into the glyphs list
+        /// </summary>
+        /// <param name="codepoint">codepoint that needs to be loaded</param>
+        /// <returns>true on sucessful loading of glyph, false otherwise</returns>
+        private bool LoadGlyph(char codepoint)
         {
             int i;
             int x;
@@ -291,36 +315,37 @@ namespace FTGLdotNet.Font
             int glyphleft = 0;
             Region region;
             int missed = 0;
+            byte[] data = null;
             //check glyph has not already been loaded
-            if(FindGlyph(ref font, codepoint, out glyph_T))
+            if(FindGlyph(codepoint, out glyph_T))
             {
                 return true;
             }
             // handle null codepoint
             if(codepoint == '\0')
             {
-                region = Atlas.Atlas.GetRegion(ref font.Atlas, 5, 5);
+                region = atlas.GetRegion(5, 5);
                 glyph_T = InitGlyph();
-                byte[] data = new byte[4 * 4 * 3] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                data = new byte[4 * 4 * 3] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
                 if(region.X<0)
                 {
                     //throw new Exception("texture atlas is full!");
                     return false;
                 }
-                Atlas.Atlas.SetRegion(ref font.Atlas, region.X, region.Y, 4, 4, data, 0);
-                glyph_T.Codepoint = -1;
-                glyph_T.S01 = (region.X + 2) / (float)font.Atlas.Width;
-                glyph_T.T01 = (region.Y + 2) / (float)font.Atlas.Height;
-                glyph_T.S11 = (region.X + 3) / (float)font.Atlas.Width;
-                glyph_T.T11 = (region.Y + 3) / (float)font.Atlas.Height;
-                font.Glyphs.Add(glyph_T);
+                atlas.SetRegion(region.X, region.Y, 4, 4, data, 0);
+                glyph_T.Codepoint = uint.MaxValue; // can't set to -1 as uint will try max value as can't really see a code point of uint.maxvalue being valid 
+                glyph_T.S01 = (region.X + 2) / (float)atlas.Width;
+                glyph_T.T01 = (region.Y + 2) / (float)atlas.Height;
+                glyph_T.S11 = (region.X + 3) / (float)atlas.Width;
+                glyph_T.T11 = (region.Y + 3) / (float)atlas.Height;
+                glyphs.Add(glyph_T);
                 return true;
             }
             LoadFlags flags = 0;
             LoadTarget target = 0;
             glyphindex = face.GetCharIndex((uint)char.ConvertToUtf32(codepoint.ToString(),0));
-            if(font.Rendermode != RenderMode.RENDER_NORMAL && font.Rendermode != RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
+            if(rendermode != RenderMode.RENDER_NORMAL && rendermode != RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
             {
                 flags |= LoadFlags.NoBitmap;
             }
@@ -328,7 +353,7 @@ namespace FTGLdotNet.Font
             {
                 flags |= LoadFlags.Render;
             }
-            if(!font.Hinting)
+            if(!hinting)
             {
                 flags |= LoadFlags.NoHinting | LoadFlags.NoAutohint;
             }
@@ -336,21 +361,21 @@ namespace FTGLdotNet.Font
             {
                 flags |= LoadFlags.ForceAutohint;
             }
-            if(font.Atlas.Depth ==3)
+            if(atlas.Depth ==3)
             {
                 library.SetLcdFilter(LcdFilter.Light);
                 target |= LoadTarget.Lcd;
-                if(font.Filtering)
+                if(filtering)
                 {
-                    library.SetLcdFilterWeights(font.Lcd_filter_weights);
+                    library.SetLcdFilterWeights(LCDFilterWeights);
                 }
             }
-            else if(HRES ==1)
+            else if(HRES == 1)//todo check if correct as if so, else statement is redundant
             {
                 target |= LoadTarget.Light;
             }
             face.LoadGlyph(glyphindex, flags, target);
-            if(font.Rendermode == RenderMode.RENDER_NORMAL || font.Rendermode == RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
+            if(rendermode == RenderMode.RENDER_NORMAL || rendermode == RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
             {
                 glyphSlot = face.Glyph;
                 fTBitmap = glyphSlot.Bitmap;
@@ -362,21 +387,21 @@ namespace FTGLdotNet.Font
                 Stroker stroker = new Stroker(library);
                 BitmapGlyph bitmapGlyph;
 
-                stroker.Set((int)(font.Outlinethickness * HRES), StrokerLineCap.Round, StrokerLineJoin.Round, 0);
+                stroker.Set((int)(outlinethickness * HRES), StrokerLineCap.Round, StrokerLineJoin.Round, 0);
                 glyph = face.Glyph.GetGlyph();
-                if(font.Rendermode == RenderMode.RENDER_OUTLINE_EDGE)
+                if(rendermode == RenderMode.RENDER_OUTLINE_EDGE)
                 {
                     glyph.Stroke(stroker, true);
                 }
-                else if(font.Rendermode == RenderMode.RENDER_OUTLINE_NEGATIVE)
+                else if(rendermode == RenderMode.RENDER_OUTLINE_NEGATIVE)
                 {
                     glyph.StrokeBorder(stroker, true, true);
                 }
-                else if(font.Rendermode == RenderMode.RENDER_OUTLINE_POSITIVE)
+                else if(rendermode == RenderMode.RENDER_OUTLINE_POSITIVE)
                 {
                     glyph.StrokeBorder(stroker, false, true);
                 }
-                if (font.Atlas.Depth == 1)
+                if (atlas.Depth == 1)
                 {
                     glyph.ToBitmap(SharpFont.RenderMode.Normal, new FTVector26Dot6(0,0), true);
                 }
@@ -392,73 +417,73 @@ namespace FTGLdotNet.Font
                 stroker.Dispose();
             }
             Padding padding = new Padding(0, 1, 0, 1);
-            if(font.Rendermode == RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
+            if(rendermode == RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
             {
                 padding.Top = 1;
                 padding.Left = 1;
             }
-            if(font.Padding !=0)
+            if(this.padding !=0)
             {
-                padding.Left += font.Padding;
-                padding.Right += font.Padding;
-                padding.Top += font.Padding;
-                padding.Bottom += font.Padding;
+                padding.Left += PaddingValue;
+                padding.Right += PaddingValue;
+                padding.Top += PaddingValue;
+                padding.Bottom += PaddingValue;
             }
-            int width = (fTBitmap.Width/font.Atlas.Depth) + padding.Left + padding.Right;
+            int width = (fTBitmap.Width/atlas.Depth) + padding.Left + padding.Right;
             int height = fTBitmap.Rows + padding.Top + padding.Bottom;
-            region = Atlas.Atlas.GetRegion(ref font.Atlas, width, height);
+            region = atlas.GetRegion(width, height);
             if(region.X <0)
             {
                 //throw new exception("texture atlas full");
                 return false;
             }
-            byte[] data = new byte[width * height * font.Atlas.Depth];
+            data = new byte[width * height * atlas.Depth];
             data = fTBitmap.BufferData;
-            if(font.Rendermode == RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
+            if(rendermode == RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
             {
                 // todo ? where is make distance map comming from
                 throw new NotImplementedException();
             }
-            Atlas.Atlas.SetRegion(ref font.Atlas, region.X, region.Y, width, height, data, width * font.Atlas.Depth);
+            atlas.SetRegion(region.X, region.Y, width, height, data, width * atlas.Depth);
             glyph_T = InitGlyph();
             glyph_T.Codepoint = (uint)char.ConvertToUtf32(codepoint.ToString(), 0);
             glyph_T.Width = (uint)width;
             glyph_T.Height = (uint)height;
-            glyph_T.RenderMode = font.Rendermode;
-            glyph_T.Outlinethickness = font.Outlinethickness;
+            glyph_T.RenderMode = rendermode;
+            glyph_T.Outlinethickness = outlinethickness;
             glyph_T.OffsetX = glyphleft;
             glyph_T.OffsetY = glyphtop;
-            glyph_T.S01 = region.X / (float)font.Atlas.Width;
-            glyph_T.T01 = region.Y / (float)font.Atlas.Height;
-            glyph_T.S11 = (region.X + width) / (float)font.Atlas.Width;
-            glyph_T.T11 = (region.Y + height) / (float)font.Atlas.Height;
+            glyph_T.S01 = region.X / (float)atlas.Width;
+            glyph_T.T01 = region.Y / (float)atlas.Height;
+            glyph_T.S11 = (region.X + width) / (float)atlas.Width;
+            glyph_T.T11 = (region.Y + height) / (float)atlas.Height;
             face.LoadGlyph(glyphindex, LoadFlags.Render | LoadFlags.NoHinting, target);
             glyphSlot = face.Glyph;
             glyph_T.Advancex = glyphSlot.Advance.X.ToSingle();
             glyph_T.Advancey = glyphSlot.Advance.Y.ToSingle();
-            font.Glyphs.Add(glyph_T);
-            if(font.Rendermode != RenderMode.RENDER_NORMAL && font.Rendermode != RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
+            glyphs.Add(glyph_T);
+            if(rendermode != RenderMode.RENDER_NORMAL && rendermode != RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
             {
                 glyph.Dispose();
             }
-            GenerateKerning(ref font);
+            GenerateKerning();
             return true;
         }
-        public static void GenerateKerning(ref Texture_Font_T font)
+        private void GenerateKerning()
         {
             Texture_Glyph_T prevglyph;
             Texture_Glyph_T glyph;
             uint glyphindex;
             uint previndex;
             FTVector26Dot6 kerning;
-            for (int x = 1; x < font.Glyphs.Count; x++)
+            for (int x = 1; x < glyphs.Count; x++)
             {
-                glyph = font.Glyphs[x];
+                glyph = glyphs[x];
                 glyphindex = face.GetCharIndex(glyph.Codepoint);
                 glyph.Kerning.Clear();
-                for (int y = 1; y < font.Glyphs.Count; y++)
+                for (int y = 1; y < glyphs.Count; y++)
                 {
-                    prevglyph = font.Glyphs[y];
+                    prevglyph = glyphs[y];
                     previndex = face.GetCharIndex(prevglyph.Codepoint);
                     kerning = face.GetKerning(previndex, glyphindex, KerningMode.Unfitted);
                     if(kerning.X)
@@ -471,10 +496,10 @@ namespace FTGLdotNet.Font
                 }
             }
         }
-        public static  Texture_Glyph_T InitGlyph()
+        public Texture_Glyph_T InitGlyph()
         {
             Texture_Glyph_T glyph = new Texture_Glyph_T();
-            glyph.Codepoint = -1;
+            glyph.Codepoint = uint.MaxValue; // can't set to -1 as uint will try max value as can't really see a code point of uint.maxvalue being valid 
             glyph.Width = 0;
             glyph.Height = 0;
             glyph.RenderMode = RenderMode.RENDER_NORMAL;
