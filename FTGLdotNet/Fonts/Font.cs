@@ -303,9 +303,6 @@ namespace FTGLdotNet.Font
         /// <returns>true on sucessful loading of glyph, false otherwise</returns>
         private bool LoadGlyph(char codepoint)
         {
-            int i;
-            int x;
-            int y;
             Glyph glyph;
             GlyphSlot glyphSlot;
             FTBitmap fTBitmap;
@@ -314,7 +311,6 @@ namespace FTGLdotNet.Font
             int glyphtop = 0;
             int glyphleft = 0;
             Region region;
-            int missed = 0;
             byte[] data = null;
             //check glyph has not already been loaded
             if(FindGlyph(codepoint, out glyph_T))
@@ -461,11 +457,7 @@ namespace FTGLdotNet.Font
             glyphSlot = face.Glyph;
             glyph_T.Advancex = glyphSlot.Advance.X.ToSingle();
             glyph_T.Advancey = glyphSlot.Advance.Y.ToSingle();
-            glyphs.Add(glyph_T);
-            if(rendermode != RenderMode.RENDER_NORMAL && rendermode != RenderMode.RENDER_SIGNED_DISTANCE_FIELD)
-            {
-                glyph.Dispose();
-            }
+            glyphs.Add(glyph_T);       
             GenerateKerning();
             return true;
         }
@@ -486,7 +478,7 @@ namespace FTGLdotNet.Font
                     prevglyph = glyphs[y];
                     previndex = face.GetCharIndex(prevglyph.Codepoint);
                     kerning = face.GetKerning(previndex, glyphindex, KerningMode.Unfitted);
-                    if(kerning.X)
+                    if (kerning.X.Value != 0) //hackish check. in c everything that is not 0 is interpreted by if as true
                     {
                         Kerning_t k = new Kerning_t();
                         k.Codepoint = prevglyph.Codepoint;
