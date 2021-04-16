@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Remove="Atlas\Texture Atlas T.cs" />
     <Compile Remove="Atlas\TextureAtlas.cs" />
+    <Compile Remove="Class1.cs" />
     <Compile Remove="Fonts\Texture Font T.cs" />
   </ItemGroup>
 
