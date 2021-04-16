@@ -164,8 +164,19 @@ namespace FTGLdotNet.Atlas
         
         public void SetRegion(int x, int y, int regionwidth, int regionheight, byte[] regiondata, int stride)
         {
-            int destinationstartpoint = ((y + 0) * width + x) * depth;
-            Array.Copy(regiondata, 0, this.data, destinationstartpoint, regiondata.Length);
+            int charsize = sizeof(char);
+            if (!(x > 0)) throw new ArgumentException("invalid x argument");
+            if (!(y > 0)) throw new ArgumentException("invalid y argument");
+            if (x > (width - 1)) throw new ArgumentException("x argument is too large");
+            if ((x + regionwidth) >= (width - 1)) throw new ArgumentException("x argument is too large");
+            if (y > (height - 1)) throw new ArgumentException("y argument is too large");
+            if ((y + regionheight) >= (height - 1)) throw new ArgumentException("y argument is too large");
+            for (int i = 0; i < regionheight; i++)
+            {
+                int regiondatastartindex = (i * stride) * charsize;
+                int datastartindex = ((y + i) * width + x) * charsize * depth;
+                Array.Copy(regiondata, regiondatastartindex, data, datastartindex, width * charsize * depth);
+            }
         }
 
         /// <summary>
